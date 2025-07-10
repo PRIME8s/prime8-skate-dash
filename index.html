@@ -57,7 +57,7 @@ let obstacleTimer = 0;
 
 const speedIncreaseInterval = 200;
 const spawnDecreaseAmount = 10;
-const minSpawnInterval = 30;
+const minSpawnInterval = 60;
 const maxObstacleSpeed = 12;
 
 function drawBackground() {
@@ -70,7 +70,9 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    ctx.drawImage(jumpSprite, 0, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    const jumpFrame = Math.floor(frame % 4);
+    const sx = jumpFrame * spriteWidth;
+    ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
   } else {
     const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
