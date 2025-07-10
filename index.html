@@ -39,6 +39,8 @@ let vy = 0;
 const gravity = 0.8;
 const jumpPower = -15;
 let jumping = false;
+let jumpFrame = 0;
+let jumpFrameCounter = 0;
 
 let bgX = 0;
 const bgSpeed = 2;
@@ -70,10 +72,10 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    const jumpFrame = Math.floor(frame % 4);
-    const sx = jumpFrame * spriteWidth;
+    jumpFrameCounter++;
+    if (jumpFrameCounter % 5 === 0) jumpFrame++;
+    const sx = (jumpFrame % 4) * spriteWidth;
     ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
-    frame = (frame + 3) % 2;
   } else {
     const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
@@ -83,13 +85,17 @@ function drawSprite() {
 
 function updateObstacles() {
   obstacleTimer++;
-  if (obstacleTimer > spawnInterval) {
+  
+if (obstacleTimer > spawnInterval) {
     const type = Math.random() < 0.2 ? 'drone' : 'block';
     const y = type === 'drone' ? 200 : 270;
     const height = type === 'drone' ? 20 : baseObstacleHeight;
     const image = type === 'block' ? (Math.random() < 0.5 ? 'trash' : 'cone') : null;
     obstacles.push({ x: canvas.width, y, width: baseObstacleWidth, height, type, image });
     obstacleTimer = 0;
+    spawnInterval = Math.floor(Math.random() * (160 - minSpawnInterval) + minSpawnInterval);
+}
+
   }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
