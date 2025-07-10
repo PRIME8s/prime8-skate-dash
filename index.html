@@ -73,6 +73,7 @@ function drawSprite() {
     const jumpFrame = Math.floor(frame % 4);
     const sx = jumpFrame * spriteWidth;
     ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    frame = (frame + 1) % 2;
   } else {
     const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
