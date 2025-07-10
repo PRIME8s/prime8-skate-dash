@@ -85,7 +85,7 @@ barrelSprite.onload = () => checkAllAssetsLoaded();
 function checkAllAssetsLoaded() {
   assetsLoaded++;
   if (assetsLoaded === requiredAssets) {
-    loop();
+    
   }
 }
 const droneSprite = new Image();
@@ -104,7 +104,7 @@ const totalAssets = 3;
 [background, walkSprite, jumpSprite].forEach(img => {
   img.onload = () => {
     assetsLoaded++;
-    if (assetsLoaded === totalAssets) loop();
+    if (assetsLoaded === totalAssets) 
   };
 });
 
@@ -287,7 +287,7 @@ function restartGame() {
   obstacleSpeed = 4;
   spawnInterval = 120;
   document.getElementById("gameOverScreen").style.display = "none";
-  loop();
+  
 }
 
 function loop() {
