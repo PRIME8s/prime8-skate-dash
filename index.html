@@ -5,12 +5,46 @@
   <meta charset="UTF-8">
   <title>Prime8 Jump</title>
   <style>
-    canvas { background: #000; display: block; margin: 0 auto; }
-    body { margin: 0; overflow: hidden; color: white; font-family: sans-serif; text-align: center; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    canvas {
+      background: #000;
+      display: block;
+      margin: 0 auto;
+      width: 100%;
+      height: auto;
+      max-width: 800px;
+    }
+    #gameOverScreen {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      font-size: 24px;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+      font-family: sans-serif;
+    }
   </style>
 </head>
 <body>
 <canvas id="gameCanvas" width="800" height="300"></canvas>
+
+<div id="gameOverScreen">
+  <div>GAME OVER</div>
+  <div style="margin: 10px 0;">Score: <span id="finalScore">0</span></div>
+  <button onclick="restartGame()" style="padding:10px 20px; font-size:18px;">Restart</button>
+</div>
+
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -22,16 +56,45 @@ const walkSprite = new Image();
 walkSprite.src = "prime8_sprite_sheet.png";
 
 const jumpSprite = new Image();
+const droneSprite = new Image();
+const coneSprite = new Image();
+const barrelSprite = new Image();
+barrelSprite.src = "TrashBin.png";
+coneSprite.src = "Cone.png";
+
+droneSprite.src = "Drone.png";
+
 jumpSprite.src = "Ollie.png";
 
+let assetsLoaded = 0;
+const totalAssets = 3;
+
+[background, walkSprite, jumpSprite].forEach(img => {
+  img.onload = () => {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) loop();
+  };
+});
+
+const CONFIG = {
+  gravity: 0.8,
+  jumpPower: -15,
+  groundY: 250,
+  spriteWidth: 24,
+  spriteHeight: 41,
+  startX: 50,
+  baseObstacleWidth: 30,
+  baseObstacleHeight: 30,
+  maxObstacleSpeed: 12,
+  speedIncreaseInterval: 200,
+  spawnDecreaseAmount: 10,
+  minSpawnInterval: 60,
+};
+
 let frame = 0;
-const spriteWidth = 24;
-const spriteHeight = 41;
-let spriteX = 50;
-let spriteY = 250;
+let spriteX = CONFIG.startX;
+let spriteY = CONFIG.groundY;
 let vy = 0;
-const gravity = 0.8;
-const jumpPower = -15;
 let jumping = false;
 
 let bgX = 0;
@@ -43,17 +106,9 @@ let gameStarted = false;
 let highScores = JSON.parse(localStorage.getItem("prime8HighScores")) || [];
 
 const obstacles = [];
-const baseObstacleWidth = 30;
-const baseObstacleHeight = 30;
 let obstacleSpeed = 4;
 let spawnInterval = 160;
 let obstacleTimer = 0;
-
-// Difficulty scaling parameters
-const speedIncreaseInterval = 200; // score points
-const spawnDecreaseAmount = 10;    // frames
-const minSpawnInterval = 60;       // frames
-const maxObstacleSpeed = 12;
 
 function drawBackground() {
   const bgWidth = background.width;
@@ -61,17 +116,15 @@ function drawBackground() {
   ctx.drawImage(background, bgX + bgWidth, canvas.height - background.height);
 
   bgX -= bgSpeed;
-  if (bgX <= -bgWidth) {
-    bgX = 0;
-  }
+  if (bgX <= -bgWidth) bgX = 0;
 }
 
 function drawSprite() {
   if (jumping) {
-    ctx.drawImage(jumpSprite, 0, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    ctx.drawImage(jumpSprite, 0, 0, CONFIG.spriteWidth, CONFIG.spriteHeight, spriteX, spriteY, CONFIG.spriteWidth, CONFIG.spriteHeight);
   } else {
-    const sx = frame * spriteWidth;
-    ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    const sx = frame * CONFIG.spriteWidth;
+    ctx.drawImage(walkSprite, spriteFrame * CONFIG.spriteWidth, 0, CONFIG.spriteWidth, CONFIG.spriteHeight, spriteX, spriteY, CONFIG.spriteWidth, CONFIG.spriteHeight);
     frame = (frame + 1) % 2;
   }
 }
@@ -79,47 +132,63 @@ function drawSprite() {
 function updateObstacles() {
   obstacleTimer++;
   if (obstacleTimer > spawnInterval) {
-    obstacles.push({ x: canvas.width, y: 270, width: baseObstacleWidth, height: baseObstacleHeight });
+    
+    const types = ['ground_cone', 'ground_barrel', 'drone'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    let y = 270;
+    let width = CONFIG.baseObstacleWidth + Math.floor(Math.random() * 20);
+    let height = CONFIG.baseObstacleHeight + Math.floor(Math.random() * 10);
+    if (type === 'drone') y = 180;
+    obstacles.push({ x: canvas.width, y, width, height, type });
+    
+    
     obstacleTimer = 0;
   }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
-    obstacles[i].x -= obstacleSpeed;
-    if (obstacles[i].x + baseObstacleWidth < 0) {
-      obstacles.splice(i, 1);
+    
+    
+    // Sprite animation logic
+    const spriteFrameCount = 2;
+    const spriteFrame = Math.floor(Date.now() / 100) % spriteFrameCount;
+    
+    if (obstacles[i].type === 'drone') {
+      obstacles[i].x -= obstacleSpeed * 1.2; // Faster
+      obstacles[i].y += Math.sin(Date.now() / 100) * 0.5; // Floaty movement
+    } else {
+      obstacles[i].x -= obstacleSpeed; // Normal ground obstacle
     }
+    
+    if (obstacles[i].x + CONFIG.baseObstacleWidth < 0) obstacles.splice(i, 1);
 
-    // Collision detection
     if (
-      spriteX < obstacles[i].x + baseObstacleWidth &&
-      spriteX + spriteWidth > obstacles[i].x &&
-      spriteY + spriteHeight > obstacles[i].y
+      spriteX < obstacles[i].x + CONFIG.baseObstacleWidth &&
+      spriteX + CONFIG.spriteWidth > obstacles[i].x &&
+      spriteY < obstacles[i].y + obstacles[i].height &&
+      spriteY + CONFIG.spriteHeight > obstacles[i].y
     ) {
       gameOver = true;
       storeHighScore(score);
+      showGameOverScreen();
     }
   }
 }
 
 function updateDifficulty() {
-  // Increase speed every interval
-  const speedLevels = Math.floor(score / speedIncreaseInterval);
-  obstacleSpeed = Math.min(4 + speedLevels, maxObstacleSpeed);
-
-  // Decrease spawn interval based on speed levels
-  spawnInterval = Math.max(120 - speedLevels * spawnDecreaseAmount, minSpawnInterval);
+  const speedLevels = Math.floor(score / CONFIG.speedIncreaseInterval);
+  obstacleSpeed = Math.min(4 + speedLevels, CONFIG.maxObstacleSpeed);
+  spawnInterval = Math.max(120 - speedLevels * CONFIG.spawnDecreaseAmount, CONFIG.minSpawnInterval);
 }
 
 function update() {
   spriteY += vy;
-  vy += gravity;
-
-  if (spriteY > 250) {
-    spriteY = 250;
+  vy += CONFIG.gravity;
+  if (spriteY > CONFIG.groundY) {
+    spriteY = CONFIG.groundY;
     vy = 0;
     jumping = false;
   }
-
   if (!gameOver && gameStarted) {
     score++;
     updateDifficulty();
@@ -128,15 +197,24 @@ function update() {
 }
 
 function drawObstacles() {
-  ctx.fillStyle = "red";
   for (let obs of obstacles) {
+    ctx.fillStyle = obs.type === 'drone' ? 'cyan' : 'red';
     
     if (obs.type === 'drone') {
-      ctx.fillStyle = 'cyan';
+      
+    ctx.drawImage(droneSprite, obs.x, obs.y + Math.sin(Date.now() / 100) * 5, obs.width, obs.height);
+    
     } else {
-      ctx.fillStyle = 'red';
+      
+    
+    if (obs.type === 'ground_cone') {
+      ctx.drawImage(coneSprite, obs.x, obs.y, obs.width, obs.height);
+    } else if (obs.type === 'ground_barrel') {
+      ctx.drawImage(barrelSprite, obs.x, obs.y, obs.width, obs.height);
     }
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    
+    
+    }
     
   }
 }
@@ -145,18 +223,6 @@ function drawScore() {
   ctx.fillStyle = "white";
   ctx.font = "20px Arial";
   ctx.fillText("Score: " + score, 10, 25);
-}
-
-function drawGameMessages() {
-  if (!gameStarted) {
-    ctx.fillText("Press SPACE to start", canvas.width / 2 - 100, canvas.height / 2);
-  }
-
-  if (gameOver) { showGameOverScreen();
-    ctx.fillText("GAME OVER", canvas.width / 2 - 70, canvas.height / 2);
-    ctx.fillText("Press SPACE to restart", canvas.width / 2 - 100, canvas.height / 2 + 30);
-    drawLeaderboard();
-  }
 }
 
 function drawLeaderboard() {
@@ -174,64 +240,6 @@ function storeHighScore(currentScore) {
   localStorage.setItem("prime8HighScores", JSON.stringify(highScores));
 }
 
-function loop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-  if (!gameOver) drawSprite();
-  update();
-  drawObstacles();
-  drawScore();
-  drawGameMessages();
-  requestAnimationFrame(loop);
-}
-
-window.addEventListener('keydown', e => {
-  if (e.code === "Space") {
-    if (!gameStarted || gameOver) {
-      gameOver = false;
-      gameStarted = true;
-      spriteY = 250;
-      vy = 0;
-      score = 0;
-      obstacles.length = 0;
-      obstacleSpeed = 4;
-      spawnInterval = 120;
-    }
-    if (!jumping) {
-      vy = jumpPower;
-      jumping = true;
-    }
-  }
-});
-
-loop();
-
-// Mobile touch support
-window.addEventListener('touchstart', () => {
-  if (!gameStarted || gameOver) {
-    gameOver = false;
-    gameStarted = true;
-    spriteY = 250;
-    vy = 0;
-    score = 0;
-    obstacles.length = 0;
-  }
-  if (!jumping) {
-    vy = jumpPower;
-    jumping = true;
-  }
-});
-</script>
-
-
-<div id="gameOverScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.8); color:white; font-size:24px; justify-content:center; align-items:center; flex-direction:column; z-index:10; font-family:sans-serif;">
-  <div>GAME OVER</div>
-  <div style="margin: 10px 0;">Score: <span id="finalScore">0</span></div>
-  <button onclick="restartGame()" style="padding:10px 20px; font-size:18px;">Restart</button>
-</div>
-
-<script>
 function showGameOverScreen() {
   document.getElementById("finalScore").textContent = score;
   document.getElementById("gameOverScreen").style.display = "flex";
@@ -240,13 +248,47 @@ function showGameOverScreen() {
 function restartGame() {
   gameOver = false;
   gameStarted = true;
-  spriteY = 250;
+  spriteY = CONFIG.groundY;
   vy = 0;
   score = 0;
   obstacles.length = 0;
+  obstacleSpeed = 4;
+  spawnInterval = 120;
   document.getElementById("gameOverScreen").style.display = "none";
+  loop();
 }
+
+function loop() {
+  if (!gameOver) requestAnimationFrame(loop);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+  if (!gameOver) drawSprite();
+  update();
+  drawObstacles();
+  drawScore();
+  drawLeaderboard();
+  if (!gameStarted) {
+    ctx.fillText("Press SPACE or TAP to Start", canvas.width / 2 - 100, canvas.height / 2);
+  }
+}
+
+window.addEventListener('keydown', e => {
+  if (e.code === "Space") {
+    if (!gameStarted || gameOver) restartGame();
+    if (!jumping) {
+      vy = CONFIG.jumpPower;
+      jumping = true;
+    }
+  }
+});
+
+window.addEventListener('touchstart', () => {
+  if (!gameStarted || gameOver) restartGame();
+  if (!jumping) {
+    vy = CONFIG.jumpPower;
+    jumping = true;
+  }
+});
 </script>
 </body>
-
 </html>
