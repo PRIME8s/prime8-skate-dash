@@ -22,6 +22,12 @@ const walkSprite = new Image();
 walkSprite.src = "prime8_sprite_sheet.png";
 
 const jumpSprite = new Image();
+const droneSprite = new Image();
+droneSprite.src = "Drone.png";
+const trashBinSprite = new Image();
+trashBinSprite.src = "TrashBin.png";
+const coneSprite = new Image();
+coneSprite.src = "Cone.png";
 jumpSprite.src = "Ollie.png";
 
 let frame = 0;
@@ -49,21 +55,17 @@ let obstacleSpeed = 4;
 let spawnInterval = 160;
 let obstacleTimer = 0;
 
-// Difficulty scaling parameters
-const speedIncreaseInterval = 200; // score points
-const spawnDecreaseAmount = 10;    // frames
-const minSpawnInterval = 60;       // frames
+const speedIncreaseInterval = 200;
+const spawnDecreaseAmount = 10;
+const minSpawnInterval = 60;
 const maxObstacleSpeed = 12;
 
 function drawBackground() {
   const bgWidth = background.width;
   ctx.drawImage(background, bgX, canvas.height - background.height);
   ctx.drawImage(background, bgX + bgWidth, canvas.height - background.height);
-
   bgX -= bgSpeed;
-  if (bgX <= -bgWidth) {
-    bgX = 0;
-  }
+  if (bgX <= -bgWidth) bgX = 0;
 }
 
 function drawSprite() {
@@ -79,41 +81,40 @@ function drawSprite() {
 function updateObstacles() {
   obstacleTimer++;
   if (obstacleTimer > spawnInterval) {
-    obstacles.push({ x: canvas.width, y: 270, width: baseObstacleWidth, height: baseObstacleHeight });
+    const type = Math.random() < 0.2 ? 'drone' : 'block';
+    const y = type === 'drone' ? 200 : 270;
+    const height = type === 'drone' ? 20 : baseObstacleHeight;
+    const image = type === 'block' ? (Math.random() < 0.5 ? 'trash' : 'cone') : null;
+    obstacles.push({ x: canvas.width, y, width: baseObstacleWidth, height, type, image });
     obstacleTimer = 0;
   }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     obstacles[i].x -= obstacleSpeed;
-    if (obstacles[i].x + baseObstacleWidth < 0) {
-      obstacles.splice(i, 1);
-    }
-
-    // Collision detection
+    if (obstacles[i].x + baseObstacleWidth < 0) obstacles.splice(i, 1);
     if (
       spriteX < obstacles[i].x + baseObstacleWidth &&
       spriteX + spriteWidth > obstacles[i].x &&
       spriteY + spriteHeight > obstacles[i].y
     ) {
-      gameOver = true;
-      storeHighScore(score);
+      if (!gameOver) {
+        gameOver = true;
+        justDied = true;
+        storeHighScore(score);
+      }
     }
   }
 }
 
 function updateDifficulty() {
-  // Increase speed every interval
   const speedLevels = Math.floor(score / speedIncreaseInterval);
   obstacleSpeed = Math.min(4 + speedLevels, maxObstacleSpeed);
-
-  // Decrease spawn interval based on speed levels
   spawnInterval = Math.max(120 - speedLevels * spawnDecreaseAmount, minSpawnInterval);
 }
 
 function update() {
   spriteY += vy;
   vy += gravity;
-
   if (spriteY > 250) {
     spriteY = 250;
     vy = 0;
@@ -128,16 +129,16 @@ function update() {
 }
 
 function drawObstacles() {
-  ctx.fillStyle = "red";
   for (let obs of obstacles) {
-    
     if (obs.type === 'drone') {
-      ctx.fillStyle = 'cyan';
+      ctx.drawImage(droneSprite, obs.x, obs.y, obs.width, obs.height);
     } else {
-      ctx.fillStyle = 'red';
+      if (obs.image === 'trash') {
+        ctx.drawImage(trashBinSprite, obs.x, obs.y, obs.width, obs.height);
+      } else {
+        ctx.drawImage(coneSprite, obs.x, obs.y, obs.width, obs.height);
+      }
     }
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-    
   }
 }
 
@@ -147,12 +148,16 @@ function drawScore() {
   ctx.fillText("Score: " + score, 10, 25);
 }
 
+let justDied = false;
 function drawGameMessages() {
   if (!gameStarted) {
     ctx.fillText("Press SPACE to start", canvas.width / 2 - 100, canvas.height / 2);
   }
-
-  if (gameOver) { showGameOverScreen();
+  if (gameOver) {
+    if (justDied) {
+      showGameOverScreen();
+      justDied = false;
+    }
     ctx.fillText("GAME OVER", canvas.width / 2 - 70, canvas.height / 2);
     ctx.fillText("Press SPACE to restart", canvas.width / 2 - 100, canvas.height / 2 + 30);
     drawLeaderboard();
@@ -204,9 +209,6 @@ window.addEventListener('keydown', e => {
   }
 });
 
-loop();
-
-// Mobile touch support
 window.addEventListener('touchstart', () => {
   if (!gameStarted || gameOver) {
     gameOver = false;
@@ -221,8 +223,9 @@ window.addEventListener('touchstart', () => {
     jumping = true;
   }
 });
-</script>
 
+loop();
+</script>
 
 <div id="gameOverScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%;
   background:rgba(0,0,0,0.8); color:white; font-size:24px; justify-content:center; align-items:center; flex-direction:column; z-index:10; font-family:sans-serif;">
@@ -248,5 +251,4 @@ function restartGame() {
 }
 </script>
 </body>
-
 </html>
