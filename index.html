@@ -55,7 +55,39 @@ background.src = "Skate Run.png";
 const walkSprite = new Image();
 walkSprite.src = "prime8_sprite_sheet.png";
 
+let assetsLoaded = 0;
+const requiredAssets = 6;
+
+const walkSprite = new Image();
+walkSprite.src = "prime8_sprite_sheet.png";
+walkSprite.onload = () => checkAllAssetsLoaded();
+
 const jumpSprite = new Image();
+jumpSprite.src = "Ollie.png";
+jumpSprite.onload = () => checkAllAssetsLoaded();
+
+const background = new Image();
+background.src = "Skate Run.png";
+background.onload = () => checkAllAssetsLoaded();
+
+const droneSprite = new Image();
+droneSprite.src = "Drone.png";
+droneSprite.onload = () => checkAllAssetsLoaded();
+
+const coneSprite = new Image();
+coneSprite.src = "Cone.png";
+coneSprite.onload = () => checkAllAssetsLoaded();
+
+const barrelSprite = new Image();
+barrelSprite.src = "TrashBin.png";
+barrelSprite.onload = () => checkAllAssetsLoaded();
+
+function checkAllAssetsLoaded() {
+  assetsLoaded++;
+  if (assetsLoaded === requiredAssets) {
+    loop();
+  }
+}
 const droneSprite = new Image();
 const coneSprite = new Image();
 const barrelSprite = new Image();
