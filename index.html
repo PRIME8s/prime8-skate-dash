@@ -259,21 +259,18 @@ function restartGame() {
 }
 
 function loop() {
-  requestAnimationFrame(loop); // Always keep looping
+  requestAnimationFrame(loop);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawBackground();
-  drawSprite();                // Always draw the sprite
-  if (!gameOver && gameStarted) {
-    update();
-  }
-  drawObstacles();            // Always draw obstacles
+  drawSprite();
+  update();
+  drawObstacles();
   drawScore();
   drawLeaderboard();
   if (!gameStarted) {
     ctx.fillText("Press SPACE or TAP to Start", canvas.width / 2 - 100, canvas.height / 2);
   }
 }
-
 
 window.addEventListener('keydown', e => {
   if (e.code === "Space") {
