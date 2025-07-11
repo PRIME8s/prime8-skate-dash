@@ -41,8 +41,12 @@ coneSprite.onload = onAssetLoad;
 
 let assetsLoaded = 0;
 function onAssetLoad() {
+  console.log("Asset loaded:", assetsLoaded + 1);
   assetsLoaded++;
-  if (assetsLoaded === 6) loop();
+  if (assetsLoaded === 6) {
+    console.log("All assets loaded. Starting game loop...");
+    loop();
+  }
 }
 
 let frame = 0;
