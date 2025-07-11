@@ -72,21 +72,16 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    if (jumpFrameDelay++ % 6 === 0) {
-      jumpFrame = (jumpFrame + 1) % 4; // advance every 6 frames
-    }
     const sx = jumpFrame * spriteWidth;
     ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    
+    jumpFrame = (jumpFrame + 1) % 4; // loop through 4 jump frames
   } else {
-    if (walkFrameDelay++ % 8 === 0) {
-      walkFrame = (walkFrame + 1) % 2; // walk animation every 8 frames
-    }
-    const sx = walkFrame * spriteWidth;
+    const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
     
-    // reset jump animation when landing
-    jumpFrame = 0;
-    jumpFrameDelay = 0;
+    frame = (frame + 1) % 4; // walking still uses 2 frames
+    jumpFrame = 0; // reset jump frame when landing
   }
 }
 
