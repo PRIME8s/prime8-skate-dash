@@ -57,9 +57,9 @@ let obstacleSpeed = 4;
 let spawnInterval = 160;
 let obstacleTimer = 0;
 
-const speedIncreaseInterval = 200;
+const speedIncreaseInterval = 20;
 const spawnDecreaseAmount = 10;
-const minSpawnInterval = 30;
+const minSpawnInterval = 20;
 const maxObstacleSpeed = 12;
 
 function drawBackground() {
@@ -72,9 +72,6 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    if (jumpFrameDelay++ % 6 === 0) {
-      jumpFrame = (jumpFrame + 1) % 4; // advance every 6 frames
-    }
     const sx = jumpFrame * spriteWidth;
     ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
     
