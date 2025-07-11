@@ -72,13 +72,19 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    ctx.drawImage(jumpSprite, 0, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    const sx = jumpFrame * spriteWidth;
+    ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    
+    jumpFrame = (jumpFrame + 1) % 4; // loop through 4 jump frames
   } else {
     const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
-    frame = (frame + 1) % 2;
+    
+    frame = (frame + 1) % 4; // walking still uses 2 frames
+    jumpFrame = 0; // reset jump frame when landing
   }
 }
+
 
 function updateObstacles() {
   obstacleTimer++;
