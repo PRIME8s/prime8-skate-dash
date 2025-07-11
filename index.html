@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,37 +16,18 @@ const ctx = canvas.getContext("2d");
 
 const background = new Image();
 background.src = "Skate Run.png";
-background.onload = onAssetLoad;
 
 const walkSprite = new Image();
 walkSprite.src = "prime8_sprite_sheet.png";
-walkSprite.onload = onAssetLoad;
 
 const jumpSprite = new Image();
-jumpSprite.src = "Prime8_Jump_SpriteSheet.png";
-jumpSprite.onload = onAssetLoad;
-
 const droneSprite = new Image();
 droneSprite.src = "Drone.png";
-droneSprite.onload = onAssetLoad;
-
 const trashBinSprite = new Image();
 trashBinSprite.src = "TrashBin.png";
-trashBinSprite.onload = onAssetLoad;
-
 const coneSprite = new Image();
 coneSprite.src = "Cone.png";
-coneSprite.onload = onAssetLoad;
-
-let assetsLoaded = 0;
-function onAssetLoad() {
-  console.log("Asset loaded:", assetsLoaded + 1);
-  assetsLoaded++;
-  if (assetsLoaded === 6) {
-    console.log("All assets loaded. Starting game loop...");
-    loop();
-  }
-}
+jumpSprite.src = "Prime8_Jump_SpriteSheet.png";
 
 let frame = 0;
 const spriteWidth = 24;
@@ -58,8 +38,6 @@ let vy = 0;
 const gravity = 0.8;
 const jumpPower = -15;
 let jumping = false;
-let jumpFrame = 0;
-let jumpFrameCounter = 0;
 
 let bgX = 0;
 const bgSpeed = 2;
@@ -78,7 +56,7 @@ let obstacleTimer = 0;
 
 const speedIncreaseInterval = 200;
 const spawnDecreaseAmount = 10;
-const minSpawnInterval = 60;
+const minSpawnInterval = 30;
 const maxObstacleSpeed = 12;
 
 function drawBackground() {
@@ -91,10 +69,7 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
-    jumpFrameCounter++;
-    if (jumpFrameCounter % 5 === 0) jumpFrame++;
-    const sx = (jumpFrame % 4) * spriteWidth;
-    ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
+    ctx.drawImage(jumpSprite, 0, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
   } else {
     const sx = frame * spriteWidth;
     ctx.drawImage(walkSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
@@ -103,47 +78,23 @@ function drawSprite() {
 }
 
 function updateObstacles() {
-  
-obstacleTimer++;
-if (obstacleTimer > spawnInterval) {
+  obstacleTimer++;
+  if (obstacleTimer > spawnInterval) {
     const type = Math.random() < 0.2 ? 'drone' : 'block';
-    let image = null;
-    let y, width, height;
-
-    if (type === 'drone') {
-        y = 200;
-        width = 30;
-        height = 20;
-    } else {
-        image = Math.random() < 0.5 ? 'trash' : 'cone';
-        y = 270;
-
-        if (image === 'trash') {
-            width = 54;
-            height = 40;
-        } else {
-            width = 24;
-            height = 20;
-        }
-    }
-
-    obstacles.push({ x: canvas.width, y, width, height, type, image });
+    const y = type === 'drone' ? 200 : 270;
+    const height = type === 'drone' ? 20 : baseObstacleHeight;
+    const image = type === 'block' ? (Math.random() < 0.5 ? 'trash' : 'cone') : null;
+    obstacles.push({ x: canvas.width, y, width: baseObstacleWidth, height, type, image });
     obstacleTimer = 0;
-    spawnInterval = Math.floor(Math.random() * (160 - minSpawnInterval) + minSpawnInterval);
-}
-
-    spawnInterval = Math.floor(Math.random() * (160 - minSpawnInterval) + minSpawnInterval);
   }
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     obstacles[i].x -= obstacleSpeed;
     if (obstacles[i].x + baseObstacleWidth < 0) obstacles.splice(i, 1);
     if (
-    spriteX < obstacles[i].x + baseObstacleWidth &&
-    spriteX + spriteWidth > obstacles[i].x &&
-    spriteY + spriteHeight > obstacles[i].y &&
-    (obstacles[i].type !== 'drone' || spriteY < obstacles[i].y)
-
+      spriteX < obstacles[i].x + baseObstacleWidth &&
+      spriteX + spriteWidth > obstacles[i].x &&
+      spriteY + spriteHeight > obstacles[i].y
     ) {
       if (!gameOver) {
         gameOver = true;
@@ -167,8 +118,6 @@ function update() {
     spriteY = 250;
     vy = 0;
     jumping = false;
-    jumpFrame = 0;
-    jumpFrameCounter = 0;
   }
 
   if (!gameOver && gameStarted) {
@@ -273,6 +222,32 @@ window.addEventListener('touchstart', () => {
     jumping = true;
   }
 });
+
+loop();
+</script>
+
+<div id="gameOverScreen" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.8); color:white; font-size:24px; justify-content:center; align-items:center; flex-direction:column; z-index:10; font-family:sans-serif;">
+  <div>GAME OVER</div>
+  <div style="margin: 10px 0;">Score: <span id="finalScore">0</span></div>
+  <button onclick="restartGame()" style="padding:10px 20px; font-size:18px;">Restart</button>
+</div>
+
+<script>
+function showGameOverScreen() {
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("gameOverScreen").style.display = "flex";
+}
+
+function restartGame() {
+  gameOver = false;
+  gameStarted = true;
+  spriteY = 250;
+  vy = 0;
+  score = 0;
+  obstacles.length = 0;
+  document.getElementById("gameOverScreen").style.display = "none";
+}
 </script>
 </body>
 </html>
