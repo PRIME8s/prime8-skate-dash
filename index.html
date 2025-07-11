@@ -72,6 +72,9 @@ function drawBackground() {
 
 function drawSprite() {
   if (jumping) {
+    if (jumpFrameDelay++ % 6 === 0) {
+      jumpFrame = (jumpFrame + 1) % 4; // advance every 6 frames
+    }
     const sx = jumpFrame * spriteWidth;
     ctx.drawImage(jumpSprite, sx, 0, spriteWidth, spriteHeight, spriteX, spriteY, spriteWidth, spriteHeight);
     
